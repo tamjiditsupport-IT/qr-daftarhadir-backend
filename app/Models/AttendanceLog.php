@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class AttendanceLog extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'meeting_id',
+        'asatidz_id',
+        'status',
+        'time',
+        'late_duration_minutes'
+    ];
+
+    public function meeting(): BelongsTo
+    {
+        return $this->belongsTo(Meeting::class, 'meeting_id');
+    }
+
+    public function asatidz(): BelongsTo
+    {
+        return $this->belongsTo(Asatidz::class, 'asatidz_id');
+    }
+}
