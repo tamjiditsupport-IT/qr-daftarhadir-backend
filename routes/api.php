@@ -42,6 +42,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/manual', [AttendanceController::class, 'manual']);
 
     // Dashboard
-    // Route::get('/dashboard', [DashboardController::class, 'index']);
-    // Route::get('/dashboard/live/{meeting_id}', [DashboardController::class, 'live']);
+    Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
 });
