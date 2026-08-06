@@ -16,4 +16,23 @@ class UnitController extends Controller
             'data' => $units
         ]);
     }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:units,id'
+        ]);
+
+        $unit = Unit::create([
+            'name' => $request->name,
+            'parent_id' => $request->parent_id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Unit berhasil ditambahkan',
+            'data' => $unit
+        ], 201);
+    }
 }

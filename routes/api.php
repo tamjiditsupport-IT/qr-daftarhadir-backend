@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UnitController;
 use App\Http\Controllers\Api\PositionController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\AsatidzController;
 use App\Http\Controllers\Api\QrCardController;
 use App\Http\Controllers\Api\MeetingController;
@@ -20,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/units/tree', [UnitController::class, 'tree']);
     Route::apiResource('units', UnitController::class);
     Route::apiResource('positions', PositionController::class);
+    Route::apiResource('users', UserController::class);
+    Route::get('/roles', [RoleController::class, 'index']);
 
     // Master Data - Asatidz
     Route::post('/import-excel', [AsatidzController::class, 'importExcel']);
@@ -30,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/qr/reprint', [QrCardController::class, 'reprint']);
 
     // Meetings
+    Route::get('/meeting-types', [\App\Http\Controllers\Api\MeetingTypeController::class, 'index']);
     Route::post('/meetings/{id}/start', [MeetingController::class, 'start']);
     Route::post('/meetings/{id}/finish', [MeetingController::class, 'finish']);
     Route::apiResource('meetings', MeetingController::class);

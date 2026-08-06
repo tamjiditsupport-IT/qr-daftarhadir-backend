@@ -12,7 +12,11 @@ class PositionController extends Controller
      */
     public function index()
     {
-        //
+        $positions = \App\Models\Position::orderBy('name')->get();
+        return response()->json([
+            'success' => true,
+            'data' => $positions
+        ]);
     }
 
     /**
@@ -20,7 +24,19 @@ class PositionController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        $position = \App\Models\Position::create([
+            'name' => $request->name
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jabatan berhasil ditambahkan',
+            'data' => $position
+        ], 201);
     }
 
     /**

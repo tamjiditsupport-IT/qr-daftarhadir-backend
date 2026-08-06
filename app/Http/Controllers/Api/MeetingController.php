@@ -101,4 +101,60 @@ class MeetingController extends Controller
             'data' => $meeting
         ]);
     }
+
+    public function start(Request $request, $id)
+    {
+        $meeting = Meeting::find($id);
+
+        if (!$meeting) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rapat tidak ditemukan'
+            ], 404);
+        }
+
+        if ($meeting->status !== 'scheduled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rapat tidak bisa dimulai karena statusnya ' . $meeting->status
+            ], 400);
+        }
+
+        $meeting->status = 'running';
+        $meeting->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rapat berhasil dimulai',
+            'data' => $meeting
+        ]);
+    }
+
+    public function finish(Request $request, $id)
+    {
+        $meeting = Meeting::find($id);
+
+        if (!$meeting) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rapat tidak ditemukan'
+            ], 404);
+        }
+
+        if ($meeting->status !== 'running') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rapat tidak bisa diakhiri karena statusnya ' . $meeting->status
+            ], 400);
+        }
+
+        $meeting->status = 'finished';
+        $meeting->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rapat berhasil diakhiri',
+            'data' => $meeting
+        ]);
+    }
 }
