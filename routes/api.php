@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Master Data - Asatidz
     Route::post('/import-excel', [AsatidzController::class, 'importExcel']);
+    Route::get('/asatidz/template', [AsatidzController::class, 'downloadTemplate']);
     Route::get('/asatidz/{id}/history', [AsatidzController::class, 'history']);
     Route::apiResource('asatidz', AsatidzController::class);
 

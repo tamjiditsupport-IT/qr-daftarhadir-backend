@@ -198,4 +198,18 @@ class AsatidzController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal mengimpor data: ' . $e->getMessage()], 500);
         }
     }
+
+    public function downloadTemplate()
+    {
+        $path = storage_path('app/template_import_asatidz_' . time() . '.xlsx');
+        $writer = \Spatie\SimpleExcel\SimpleExcelWriter::create($path);
+        
+        $writer->addRow([
+            'id_asatidz' => 'AST001',
+            'name' => 'Ustadz Fulan bin Fulan',
+            'phone' => '081234567890'
+        ]);
+        
+        return response()->download($path, 'Template_Import_Asatidz.xlsx')->deleteFileAfterSend(true);
+    }
 }
