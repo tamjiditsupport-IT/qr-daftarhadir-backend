@@ -36,6 +36,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/mark-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
 
+    // Global Search
+    Route::get('/search', [\App\Http\Controllers\Api\SearchController::class, 'index']);
+
     // Master Data - Asatidz
     Route::post('/import-excel', [AsatidzController::class, 'importExcel']);
     Route::get('/asatidz/{id}/history', [AsatidzController::class, 'history']);

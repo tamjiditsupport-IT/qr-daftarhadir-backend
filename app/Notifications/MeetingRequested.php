@@ -14,9 +14,11 @@ class MeetingRequested extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public $meeting;
+
+    public function __construct($meeting)
     {
-        //
+        $this->meeting = $meeting;
     }
 
     /**
@@ -26,7 +28,7 @@ class MeetingRequested extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -40,6 +42,15 @@ class MeetingRequested extends Notification
             ->line('Thank you for using our application!');
     }
 
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'meeting_id' => $this->meeting->id,
+            'title' => 'Persetujuan Rapat Baru',
+            'message' => 'Rapat "' . $this->meeting->title . '" membutuhkan persetujuan Anda.'
+        ];
+    }
+
     /**
      * Get the array representation of the notification.
      *
@@ -48,7 +59,9 @@ class MeetingRequested extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'meeting_id' => $this->meeting->id,
+            'title' => 'Persetujuan Rapat Baru',
+            'message' => 'Rapat "' . $this->meeting->title . '" membutuhkan persetujuan Anda.'
         ];
     }
 }

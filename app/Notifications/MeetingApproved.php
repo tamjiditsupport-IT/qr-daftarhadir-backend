@@ -14,9 +14,13 @@ class MeetingApproved extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public $meeting;
+    public $status; // 'approved' or 'rejected'
+
+    public function __construct($meeting, $status)
     {
-        //
+        $this->meeting = $meeting;
+        $this->status = $status;
     }
 
     /**
@@ -26,18 +30,22 @@ class MeetingApproved extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database'];
     }
 
     /**
-     * Get the mail representation of the notification.
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toDatabase(object $notifiable): array
     {
-        return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
+        $statusText = $this->status === 'approved' ? 'Disetujui' : 'Ditolak';
+        return [
+            'meeting_id' => $this->meeting->id,
+            'title' => 'Rapat ' . $statusText,
+            'message' => 'Pengajuan rapat "' . $this->meeting->title . '" telah ' . strtolower($statusText) . ' oleh Yayasan.'
+        ];
     }
 
     /**

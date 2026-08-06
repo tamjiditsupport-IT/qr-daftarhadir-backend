@@ -69,6 +69,17 @@ class MeetingController extends Controller
                 'action' => 'Membuat rapat baru: ' . $meeting->title
             ]);
 
+            // Notify super admins
+            $superAdmins = \App\Models\User::whereHas('roles', function($q){
+                $q->where('name', 'super_admin')->orWhere('name', 'admin_yayasan');
+            })->get();
+
+            foreach($superAdmins as $admin) {
+                if ($admin->id !== ($request->user()->id ?? null)) {
+                    $admin->notify(new \App\Notifications\MeetingRequested($meeting));
+                }
+            }
+
             DB::commit();
             return response()->json([
                 'success' => true,
