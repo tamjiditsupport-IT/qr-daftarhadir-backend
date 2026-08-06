@@ -13,14 +13,28 @@ class Approval extends Model
 
     protected $fillable = [
         'meeting_id',
+        'asatidz_id',
+        'requested_by',
         'approved_by',
+        'type',
         'status',
-        'notes'
+        'notes',
+        'approved_at'
     ];
 
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class, 'meeting_id');
+    }
+
+    public function asatidz(): BelongsTo
+    {
+        return $this->belongsTo(Asatidz::class, 'asatidz_id');
+    }
+
+    public function requestedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requested_by');
     }
 
     public function approver(): BelongsTo

@@ -93,7 +93,36 @@ class AttendanceController extends Controller
 
     public function manual(Request $request)
     {
-        // TODO: manual entry implementation
-        return response()->json(['message' => 'Not implemented yet'], 501);
+        $request->validate([
+            'meeting_id' => 'required|exists:meetings,id',
+            'asatidz_id' => 'required|exists:asatidz,id',
+            'status' => 'required|in:Present,Late,Absent,Sick,Excused'
+        ]);
+
+        $meeting = Meeting::findOrFail($request->meeting_id);
+        
+        $log = AttendanceLog::where('meeting_id', $meeting->id)
+                ->where('asatidz_id', $request->asatidz_id)
+                ->first();
+
+        if ($log) {
+            $log->update([
+                'status' => $request->status,
+                'late_duration_minutes' => 0
+            ]);
+        } else {
+            AttendanceLog::create([
+                'meeting_id' => $meeting->id,
+                'asatidz_id' => $request->asatidz_id,
+                'status' => $request->status,
+                'time' => Carbon::now()->format('H:i:s'),
+                'late_duration_minutes' => 0,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status kehadiran berhasil diperbarui',
+        ]);
     }
 }

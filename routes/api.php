@@ -35,7 +35,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('meetings', MeetingController::class);
 
     // Approvals (Admin Yayasan)
-    // TODO: move to ApprovalController
+    Route::get('/approvals', [\App\Http\Controllers\Api\ApprovalController::class, 'index']);
+    Route::post('/approvals', [\App\Http\Controllers\Api\ApprovalController::class, 'store']);
+    Route::post('/approvals/{id}/resolve', [\App\Http\Controllers\Api\ApprovalController::class, 'resolve']);
     
     // Attendance
     Route::post('/attendance/scan', [AttendanceController::class, 'scan']);

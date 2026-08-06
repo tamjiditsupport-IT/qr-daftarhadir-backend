@@ -79,4 +79,26 @@ class MeetingController extends Controller
             ], 500);
         }
     }
+
+    public function show($id)
+    {
+        $meeting = Meeting::with([
+            'type', 
+            'creator',
+            'participants.asatidz',
+            'attendanceLogs'
+        ])->find($id);
+
+        if (!$meeting) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rapat tidak ditemukan'
+            ], 404);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => $meeting
+        ]);
+    }
 }
