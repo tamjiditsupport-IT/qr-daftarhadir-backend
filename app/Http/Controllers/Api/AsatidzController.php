@@ -154,4 +154,48 @@ class AsatidzController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Data asatidz berhasil dihapus']);
     }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:5120'
+        ]);
+
+        $file = $request->file('file');
+        
+        DB::beginTransaction();
+        try {
+            $extension = $file->getClientOriginalExtension() ?: 'xlsx';
+            $rows = \Spatie\SimpleExcel\SimpleExcelReader::create($file->getRealPath(), $extension)->getRows();
+            
+            $rows->each(function(array $row) {
+                // Ignore rows without ID or Name
+                if (empty($row['id_asatidz']) || empty($row['name'])) return;
+                
+                $asatidz = Asatidz::updateOrCreate(
+                    ['id_asatidz' => $row['id_asatidz']],
+                    [
+                        'name' => $row['name'],
+                        'phone' => $row['phone'] ?? null
+                    ]
+                );
+
+                \App\Models\QrCard::firstOrCreate(
+                    ['asatidz_id' => $asatidz->id],
+                    ['qr_code' => $asatidz->id_asatidz]
+                );
+            });
+
+            \App\Models\AuditLog::create([
+                'user_id' => $request->user()->id ?? null,
+                'action' => 'Import Data Asatidz Excel'
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Data asatidz berhasil diimpor']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal mengimpor data: ' . $e->getMessage()], 500);
+        }
+    }
 }

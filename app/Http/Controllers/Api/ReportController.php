@@ -152,6 +152,21 @@ class ReportController extends Controller
 
     public function export(Request $request)
     {
-        return response()->json(['success' => true, 'message' => 'Export sedang diproses']);
+        $asatidz = Asatidz::with(['units', 'positions'])->orderBy('name')->get();
+        $path = storage_path('app/export_asatidz_' . time() . '.xlsx');
+        
+        $writer = \Spatie\SimpleExcel\SimpleExcelWriter::create($path);
+        
+        foreach ($asatidz as $a) {
+            $writer->addRow([
+                'ID Asatidz' => $a->id_asatidz,
+                'Nama' => $a->name,
+                'Phone' => $a->phone,
+                'Unit' => $a->units->pluck('name')->implode(', '),
+                'Jabatan' => $a->positions->pluck('name')->implode(', '),
+            ]);
+        }
+        
+        return response()->download($path, 'Data_Asatidz.xlsx')->deleteFileAfterSend(true);
     }
 }
