@@ -66,6 +66,11 @@ class Meeting extends Model
         return $this->hasMany(MeetingAttachment::class, 'meeting_id');
     }
 
+    public function histories(): HasMany
+    {
+        return $this->hasMany(MeetingHistory::class, 'meeting_id')->orderBy('created_at', 'desc');
+    }
+
     public function participants(): HasMany
     {
         return $this->hasMany(MeetingParticipant::class, 'meeting_id');

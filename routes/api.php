@@ -14,8 +14,15 @@ use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SettingController;
+use Illuminate\Support\Facades\Broadcast;
 
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
