@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\AsatidzController;
 use App\Http\Controllers\Api\QrCardController;
 use App\Http\Controllers\Api\MeetingController;
+use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\AttendanceController;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -37,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/meeting-types', [\App\Http\Controllers\Api\MeetingTypeController::class, 'index']);
     Route::post('/meetings/{id}/start', [MeetingController::class, 'start']);
     Route::post('/meetings/{id}/finish', [MeetingController::class, 'finish']);
+    Route::get('/meetings/{id}/export/excel', [ExportController::class, 'exportExcel']);
+    Route::get('/meetings/{id}/export/pdf', [ExportController::class, 'exportPdf']);
     Route::apiResource('meetings', MeetingController::class);
 
     // Approvals (Admin Yayasan)

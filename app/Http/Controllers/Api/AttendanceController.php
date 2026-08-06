@@ -74,13 +74,19 @@ class AttendanceController extends Controller
             $lateDurationMinutes = $now->diffInMinutes($startTime);
         }
 
-        AttendanceLog::create([
+        $participant->update([
+            'attendance_status' => $status,
+        ]);
+
+        $log = AttendanceLog::create([
             'meeting_id' => $meeting->id,
             'asatidz_id' => $asatidz->id,
             'status' => $status,
             'time' => $now->format('H:i:s'),
             'late_duration_minutes' => $lateDurationMinutes,
         ]);
+
+        broadcast(new \App\Events\AttendanceScanned($participant))->toOthers();
 
         return response()->json([
             'success' => true,

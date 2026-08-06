@@ -18,13 +18,53 @@ class DashboardController extends Controller
         
         $recentMeetings = Meeting::with('type')->orderBy('created_at', 'desc')->limit(5)->get();
 
+        // Calculate attendance stats for current month
+        $currentMonthMeetings = Meeting::whereMonth('start_time', date('m'))->pluck('id');
+        
+        $stats = [
+            'present' => \App\Models\MeetingParticipant::whereIn('meeting_id', $currentMonthMeetings)->where('attendance_status', 'Present')->count(),
+            'permit' => \App\Models\MeetingParticipant::whereIn('meeting_id', $currentMonthMeetings)->where('attendance_status', 'Permit')->count(),
+            'sick' => \App\Models\MeetingParticipant::whereIn('meeting_id', $currentMonthMeetings)->where('attendance_status', 'Sick')->count(),
+            'late' => \App\Models\MeetingParticipant::whereIn('meeting_id', $currentMonthMeetings)->where('attendance_status', 'Late')->count(),
+            'absent' => \App\Models\MeetingParticipant::whereIn('meeting_id', $currentMonthMeetings)->where('attendance_status', 'Absent')->count(),
+        ];
+        
+        $totalExpected = array_sum($stats);
+        $totalAttended = $stats['present'] + $stats['late'];
+        $percentage = $totalExpected > 0 ? round(($totalAttended / $totalExpected) * 100, 1) : 0;
+
+        // Chart data (last 7 meetings)
+        $chartMeetings = Meeting::orderBy('start_time', 'asc')->limit(7)->get();
+        $chartData = [];
+        foreach ($chartMeetings as $m) {
+            $present = \App\Models\MeetingParticipant::where('meeting_id', $m->id)->whereIn('attendance_status', ['Present', 'Late'])->count();
+            $absent = \App\Models\MeetingParticipant::where('meeting_id', $m->id)->whereIn('attendance_status', ['Absent', 'Sick', 'Permit'])->count();
+            
+            $chartData[] = [
+                'name' => mb_substr($m->title, 0, 15) . (mb_strlen($m->title) > 15 ? '...' : ''),
+                'Hadir' => $present,
+                'Tidak Hadir' => $absent
+            ];
+        }
+
+        // Recent Scans
+        $recentScans = \App\Models\MeetingParticipant::with(['asatidz', 'meeting'])
+                        ->whereIn('attendance_status', ['Present', 'Late'])
+                        ->orderBy('created_at', 'desc')
+                        ->limit(10)
+                        ->get();
+
         return response()->json([
             'success' => true,
             'data' => [
                 'total_asatidz' => $totalAsatidz,
                 'total_meetings' => $totalMeetings,
                 'total_units' => $totalUnits,
-                'recent_meetings' => $recentMeetings
+                'recent_meetings' => $recentMeetings,
+                'stats' => $stats,
+                'percentage' => $percentage,
+                'chart_data' => $chartData,
+                'recent_scans' => $recentScans
             ]
         ]);
     }
