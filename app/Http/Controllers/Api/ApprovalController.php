@@ -18,8 +18,9 @@ class ApprovalController extends Controller
                     
         $user = $request->user();
         if ($user && $user->unit_id) {
-            $query->whereHas('asatidz', function($q) use ($user) {
-                $q->where('unit_id', $user->unit_id);
+            $unitIds = $user->unit->getAllChildIds();
+            $query->whereHas('asatidz.units', function($q) use ($unitIds) {
+                $q->whereIn('units.id', $unitIds);
             });
         }
         

@@ -10,9 +10,19 @@ use Illuminate\Support\Facades\DB;
 
 class AsatidzController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $asatidz = Asatidz::with(['units', 'positions', 'qrCard'])->orderBy('name')->get();
+        $query = Asatidz::with(['units', 'positions', 'qrCard'])->orderBy('name');
+        
+        $user = $request->user();
+        if ($user && $user->unit_id) {
+            $unitIds = $user->unit->getAllChildIds();
+            $query->whereHas('units', function($q) use ($unitIds) {
+                $q->whereIn('units.id', $unitIds);
+            });
+        }
+        
+        $asatidz = $query->get();
         return response()->json([
             'success' => true,
             'data' => $asatidz

@@ -25,6 +25,21 @@ class Unit extends Model
         return $this->hasMany(Unit::class, 'parent_id');
     }
 
+    /**
+     * Recursively get this unit's ID and all its descendants' IDs.
+     */
+    public function getAllChildIds(): array
+    {
+        $ids = [$this->id];
+        $children = $this->children()->get();
+        
+        foreach ($children as $child) {
+            $ids = array_merge($ids, $child->getAllChildIds());
+        }
+        
+        return $ids;
+    }
+
     public function asatidz(): BelongsToMany
     {
         return $this->belongsToMany(Asatidz::class, 'asatidz_units');
