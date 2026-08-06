@@ -40,6 +40,11 @@ class UserController extends Controller
 
             $user->assignRole($request->role);
 
+            \App\Models\AuditLog::create([
+                'user_id' => $request->user()->id ?? null,
+                'action' => 'Menambahkan User: ' . $user->name . ' (' . $request->role . ')'
+            ]);
+
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -54,5 +59,37 @@ class UserController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        // Prevent self deletion
+        if ($request->user() && $request->user()->id == $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menghapus akun sendiri'
+            ], 400);
+        }
+
+        $name = $user->name;
+        $user->delete();
+
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id ?? null,
+            'action' => 'Menghapus User: ' . $name
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User berhasil dihapus'
+        ]);
     }
 }

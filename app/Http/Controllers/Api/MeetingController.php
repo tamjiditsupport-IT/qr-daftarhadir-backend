@@ -64,6 +64,11 @@ class MeetingController extends Controller
                 }
             }
 
+            \App\Models\AuditLog::create([
+                'user_id' => $request->user()->id ?? null,
+                'action' => 'Membuat rapat baru: ' . $meeting->title
+            ]);
+
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -123,6 +128,11 @@ class MeetingController extends Controller
         $meeting->status = 'running';
         $meeting->save();
 
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id ?? null,
+            'action' => 'Memulai rapat: ' . $meeting->title
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Rapat berhasil dimulai',
@@ -150,6 +160,11 @@ class MeetingController extends Controller
 
         $meeting->status = 'finished';
         $meeting->save();
+
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id ?? null,
+            'action' => 'Mengakhiri rapat: ' . $meeting->title
+        ]);
 
         return response()->json([
             'success' => true,

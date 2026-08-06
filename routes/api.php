@@ -53,4 +53,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
+    // Audit Logs
+    Route::get('/audit-logs', [\App\Http\Controllers\Api\AuditLogController::class, 'index']);
 });

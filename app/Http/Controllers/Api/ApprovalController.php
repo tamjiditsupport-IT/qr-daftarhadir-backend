@@ -11,14 +11,21 @@ use Carbon\Carbon;
 
 class ApprovalController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $approvals = Approval::with(['meeting', 'asatidz', 'requestedBy', 'approver'])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+        $query = Approval::with(['meeting', 'asatidz', 'requestedBy', 'approver'])
+                    ->orderBy('created_at', 'desc');
+                    
+        $user = $request->user();
+        if ($user && $user->unit_id) {
+            $query->whereHas('asatidz', function($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+        }
+        
         return response()->json([
             'success' => true,
-            'data' => $approvals
+            'data' => $query->get()
         ]);
     }
 
@@ -66,25 +73,66 @@ class ApprovalController extends Controller
             ]);
 
             if ($request->status === 'Approved') {
-                $log = AttendanceLog::where('meeting_id', $approval->meeting_id)
-                        ->where('asatidz_id', $approval->asatidz_id)
-                        ->first();
-
-                if ($log) {
-                    $log->update([
-                        'status' => $approval->type,
-                        'late_duration_minutes' => 0
-                    ]);
-                } else {
+                $participant = \App\Models\MeetingParticipant::where('meeting_id', $approval->meeting_id)
+                                ->where('asatidz_id', $approval->asatidz_id)->first();
+                                
+                if ($approval->type === 'Attendance') {
+                    $meeting = \App\Models\Meeting::find($approval->meeting_id);
+                    $startTime = Carbon::parse($meeting->start_time);
+                    $lateToleratedTime = $startTime->copy()->addMinutes($meeting->late_minutes);
+                    $scanTime = Carbon::parse($approval->created_at);
+                    
+                    $status = 'Present';
+                    $lateDurationMinutes = 0;
+                    if ($scanTime->greaterThan($lateToleratedTime)) {
+                        $status = 'Late';
+                        $lateDurationMinutes = $scanTime->diffInMinutes($startTime);
+                    }
+                    
+                    if ($participant) $participant->update(['attendance_status' => $status]);
+                    
                     AttendanceLog::create([
                         'meeting_id' => $approval->meeting_id,
                         'asatidz_id' => $approval->asatidz_id,
-                        'status' => $approval->type,
-                        'time' => Carbon::now()->format('H:i:s'),
-                        'late_duration_minutes' => 0,
+                        'status' => $status,
+                        'time' => $scanTime->format('H:i:s'),
+                        'late_duration_minutes' => $lateDurationMinutes,
                     ]);
+                    
+                    if ($participant) broadcast(new \App\Events\AttendanceScanned($participant))->toOthers();
+                } else {
+                    if ($participant) $participant->update(['attendance_status' => $approval->type]);
+                    
+                    $log = AttendanceLog::where('meeting_id', $approval->meeting_id)
+                            ->where('asatidz_id', $approval->asatidz_id)
+                            ->first();
+
+                    if ($log) {
+                        $log->update([
+                            'status' => $approval->type,
+                            'late_duration_minutes' => 0
+                        ]);
+                    } else {
+                        AttendanceLog::create([
+                            'meeting_id' => $approval->meeting_id,
+                            'asatidz_id' => $approval->asatidz_id,
+                            'status' => $approval->type,
+                            'time' => Carbon::now()->format('H:i:s'),
+                            'late_duration_minutes' => 0,
+                        ]);
+                    }
                 }
+            } else if ($request->status === 'Rejected' && $approval->type === 'Attendance') {
+                $participant = \App\Models\MeetingParticipant::where('meeting_id', $approval->meeting_id)
+                                ->where('asatidz_id', $approval->asatidz_id)->first();
+                if ($participant) $participant->update(['attendance_status' => 'Absent']);
+                if ($participant) broadcast(new \App\Events\AttendanceScanned($participant))->toOthers();
             }
+
+            \App\Models\AuditLog::create([
+                'user_id' => $request->user()->id ?? null,
+                'action' => 'Meresolusi Persetujuan (' . $request->status . '): ' . $approval->type . ' untuk Asatidz ID ' . $approval->asatidz_id
+            ]);
 
             DB::commit();
             return response()->json([

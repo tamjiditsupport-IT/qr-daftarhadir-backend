@@ -53,6 +53,11 @@ class AsatidzController extends Controller
                 'qr_code' => $request->id_asatidz // typically using ID as QR, per PRD
             ]);
 
+            \App\Models\AuditLog::create([
+                'user_id' => $request->user()->id ?? null,
+                'action' => 'Menambahkan Asatidz: ' . $asatidz->name
+            ]);
+
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -67,5 +72,29 @@ class AsatidzController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $asatidz = Asatidz::find($id);
+        if (!$asatidz) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan'
+            ], 404);
+        }
+
+        $name = $asatidz->name;
+        $asatidz->delete();
+
+        \App\Models\AuditLog::create([
+            'user_id' => $request->user()->id ?? null,
+            'action' => 'Menghapus Asatidz: ' . $name
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data asatidz berhasil dihapus'
+        ]);
     }
 }

@@ -74,6 +74,33 @@ class AttendanceController extends Controller
             $lateDurationMinutes = $now->diffInMinutes($startTime);
         }
 
+        $requiresApproval = !$meeting->unit_id || $meeting->unit_id !== $asatidz->unit_id;
+
+        if ($requiresApproval) {
+            // Set participant to Pending
+            $participant->update(['attendance_status' => 'Pending']);
+
+            // Create Approval request
+            \App\Models\Approval::create([
+                'meeting_id' => $meeting->id,
+                'asatidz_id' => $asatidz->id,
+                'type' => 'Attendance',
+                'status' => 'Pending',
+                'notes' => 'Kehadiran lintas unit: ' . $status . ' (' . $lateDurationMinutes . ' menit)'
+            ]);
+
+            broadcast(new \App\Events\AttendanceScanned($participant))->toOthers();
+
+            return response()->json([
+                'success' => true,
+                'status' => 'Pending',
+                'message' => 'Kehadiran menunggu persetujuan Admin Unit asal',
+                'time' => $now->format('H:i:s'),
+                'name' => $asatidz->name
+            ]);
+        }
+
+        // Normal flow
         $participant->update([
             'attendance_status' => $status,
         ]);
