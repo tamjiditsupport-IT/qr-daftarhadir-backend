@@ -52,7 +52,21 @@ class PositionController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $position = \App\Models\Position::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        $position->update([
+            'name' => $request->name
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jabatan berhasil diperbarui',
+            'data' => $position
+        ]);
     }
 
     /**
@@ -60,6 +74,20 @@ class PositionController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $position = \App\Models\Position::findOrFail($id);
+
+        if ($position->asatidz()->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jabatan tidak dapat dihapus karena masih digunakan oleh Asatidz'
+            ], 400);
+        }
+
+        $position->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jabatan berhasil dihapus'
+        ]);
     }
 }

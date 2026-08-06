@@ -12,7 +12,8 @@ class MeetingParticipant extends Model
 
     protected $fillable = [
         'meeting_id',
-        'asatidz_id'
+        'asatidz_id',
+        'attendance_status',
     ];
 
     public function meeting(): BelongsTo
@@ -23,5 +24,11 @@ class MeetingParticipant extends Model
     public function asatidz(): BelongsTo
     {
         return $this->belongsTo(Asatidz::class, 'asatidz_id');
+    }
+
+    public function attendanceLog()
+    {
+        return $this->hasOne(AttendanceLog::class, 'asatidz_id', 'asatidz_id')
+            ->where('meeting_id', $this->meeting_id ?? 0);
     }
 }

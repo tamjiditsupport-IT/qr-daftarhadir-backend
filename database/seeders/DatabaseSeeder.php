@@ -15,8 +15,24 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Permissions
+        $perms = [
+            'manage_users',
+            'manage_master_data', 
+            'manage_meetings',
+            'manage_asatidz',
+            'view_reports',
+            'manage_approvals',
+            'manage_settings'
+        ];
+        foreach($perms as $p) {
+            \Spatie\Permission\Models\Permission::create(['name' => $p]);
+        }
+
         // Roles
         $superAdmin = Role::create(['name' => 'super_admin']);
+        $superAdmin->syncPermissions($perms);
+        
         $adminYayasan = Role::create(['name' => 'admin_yayasan']);
         $adminInstansi = Role::create(['name' => 'admin_instansi']);
 

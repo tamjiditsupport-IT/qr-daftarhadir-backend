@@ -59,13 +59,19 @@ class ApprovalController extends Controller
     {
         $request->validate([
             'status' => 'required|in:Approved,Rejected',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'asatidz_id' => 'nullable|exists:asatidz,id'
         ]);
 
         $approval = Approval::findOrFail($id);
 
         DB::beginTransaction();
         try {
+            // Revisi Peserta jika ada
+            if ($request->has('asatidz_id') && $request->asatidz_id != $approval->asatidz_id) {
+                $approval->asatidz_id = $request->asatidz_id;
+            }
+
             $approval->update([
                 'status' => $request->status,
                 'approved_by' => $request->user()->id ?? null,

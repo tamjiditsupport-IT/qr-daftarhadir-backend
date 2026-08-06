@@ -92,4 +92,12 @@ class UserController extends Controller
             'message' => 'User berhasil dihapus'
         ]);
     }
+
+    public function resetPassword(Request $request, string $id)
+    {
+        $request->validate(['password' => 'required|string|min:6']);
+        $user = User::findOrFail($id);
+        $user->update(['password' => Hash::make($request->password)]);
+        return response()->json(['success' => true, 'message' => 'Password berhasil direset']);
+    }
 }

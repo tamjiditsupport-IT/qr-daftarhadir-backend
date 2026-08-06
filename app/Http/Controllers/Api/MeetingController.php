@@ -91,7 +91,9 @@ class MeetingController extends Controller
             'type', 
             'creator',
             'participants.asatidz',
-            'attendanceLogs'
+            'attendanceLogs',
+            'attachments',
+            'attachments.uploader'
         ])->find($id);
 
         if (!$meeting) {

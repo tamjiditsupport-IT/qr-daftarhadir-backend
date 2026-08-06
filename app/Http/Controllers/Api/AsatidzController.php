@@ -84,14 +84,64 @@ class AsatidzController extends Controller
         }
     }
 
+    public function show($id)
+    {
+        $asatidz = Asatidz::with(['units', 'positions', 'qrCard'])->findOrFail($id);
+        return response()->json(['success' => true, 'data' => $asatidz]);
+    }
+
+    public function history($id)
+    {
+        $asatidz = Asatidz::findOrFail($id);
+        $history = \App\Models\MeetingParticipant::with(['meeting.type', 'attendanceLog'])
+            ->where('asatidz_id', $asatidz->id)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'meeting_id' => $p->meeting_id,
+                'meeting' => $p->meeting ? [
+                    'title' => $p->meeting->title,
+                    'start_time' => $p->meeting->start_time,
+                    'type' => $p->meeting->type,
+                ] : null,
+                'attendance_status' => $p->attendance_status,
+                'attendance_log' => $p->attendanceLog ? [
+                    'time' => $p->attendanceLog->time,
+                    'status' => $p->attendanceLog->status,
+                ] : null,
+            ]);
+
+        return response()->json(['success' => true, 'data' => $history]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $asatidz = Asatidz::findOrFail($id);
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'phone' => 'nullable|string',
+            'unit_ids' => 'nullable|array',
+            'position_ids' => 'nullable|array',
+        ]);
+
+        $asatidz->update($request->only(['name', 'phone']));
+
+        if ($request->has('unit_ids')) {
+            $asatidz->units()->sync($request->unit_ids);
+        }
+        if ($request->has('position_ids')) {
+            $asatidz->positions()->sync($request->position_ids);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Data berhasil diperbarui', 'data' => $asatidz->load(['units', 'positions'])]);
+    }
+
     public function destroy(Request $request, $id)
     {
         $asatidz = Asatidz::find($id);
         if (!$asatidz) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
         }
 
         $name = $asatidz->name;
@@ -102,9 +152,6 @@ class AsatidzController extends Controller
             'action' => 'Menghapus Asatidz: ' . $name
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data asatidz berhasil dihapus'
-        ]);
+        return response()->json(['success' => true, 'message' => 'Data asatidz berhasil dihapus']);
     }
 }
