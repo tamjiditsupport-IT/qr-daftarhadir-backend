@@ -29,7 +29,7 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'unit_id' => $request->role === 'admin_instansi' ? $request->unit_id : null
+                'unit_id' => ($request->role !== 'super_admin' && $request->has('unit_id')) ? $request->unit_id : null
             ]);
 
             $user->assignRole($request->role);
