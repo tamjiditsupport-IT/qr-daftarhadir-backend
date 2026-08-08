@@ -50,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Meetings Management ──
     Route::middleware('permission:manage_meetings,web')->group(function () {
+        Route::post('/meetings/import-excel', [MeetingController::class, 'importExcel']);
+        Route::get('/meetings/template', [MeetingController::class, 'downloadTemplate']);
         Route::apiResource('meeting-types', \App\Http\Controllers\Api\MeetingTypeController::class);
         Route::post('/meetings/{id}/start', [MeetingController::class, 'start']);
         Route::post('/meetings/{id}/finish', [MeetingController::class, 'finish']);
@@ -92,6 +94,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── User & Role Management (Super Admin) ──
     Route::middleware('permission:manage_users,web')->group(function () {
+        Route::post('/users/import-excel', [UserController::class, 'importExcel']);
+        Route::get('/users/template', [UserController::class, 'downloadTemplate']);
         Route::apiResource('users', UserController::class);
         Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
         Route::get('/roles', [RoleController::class, 'index']);

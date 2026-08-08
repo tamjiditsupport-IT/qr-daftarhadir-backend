@@ -186,4 +186,83 @@ class MeetingController extends Controller
             'data' => $meeting
         ]);
     }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:5120'
+        ]);
+
+        $file = $request->file('file');
+        
+        DB::beginTransaction();
+        try {
+            $extension = $file->getClientOriginalExtension() ?: 'xlsx';
+            $rows = \Spatie\SimpleExcel\SimpleExcelReader::create($file->getRealPath(), $extension)->getRows();
+            
+            $rows->each(function(array $row) use ($request) {
+                if (empty($row['title']) || empty($row['start_time'])) return;
+                
+                $meeting = Meeting::create([
+                    'title' => $row['title'],
+                    'meeting_type_id' => $row['meeting_type_id'] ?: 1,
+                    'start_time' => $row['start_time'],
+                    'late_minutes' => $row['late_minutes'] ?: 15,
+                    'status' => 'scheduled',
+                    'created_by' => $request->user()->id ?? null
+                ]);
+
+                if (!empty($row['unit_ids'])) {
+                    $unitIds = array_map('trim', explode(',', (string)$row['unit_ids']));
+                    
+                    $asatidzIds = DB::table('asatidz_units')
+                                    ->whereIn('unit_id', $unitIds)
+                                    ->pluck('asatidz_id')
+                                    ->unique();
+
+                    $participants = [];
+                    foreach ($asatidzIds as $id) {
+                        $participants[] = [
+                            'meeting_id' => $meeting->id,
+                            'asatidz_id' => $id,
+                            'attendance_status' => 'Absent',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                    
+                    if (count($participants) > 0) {
+                        MeetingParticipant::insert($participants);
+                    }
+                }
+            });
+
+            \App\Models\AuditLog::create([
+                'user_id' => $request->user()->id ?? null,
+                'action' => 'Import Data Meetings Excel'
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Data meetings berhasil diimpor']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => app()->isLocal() ? 'Gagal mengimpor data: ' . $e->getMessage() : 'Gagal mengimpor data'], 500);
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        $path = storage_path('app/template_import_meetings_' . time() . '.xlsx');
+        $writer = \Spatie\SimpleExcel\SimpleExcelWriter::create($path);
+        
+        $writer->addRow([
+            'title' => 'Rapat Awal Tahun',
+            'meeting_type_id' => '1',
+            'start_time' => '2026-09-01 08:00:00',
+            'late_minutes' => '15',
+            'unit_ids' => '1,2,3'
+        ]);
+        
+        return response()->download($path, 'Template_Import_Meetings.xlsx')->deleteFileAfterSend(true);
+    }
 }
