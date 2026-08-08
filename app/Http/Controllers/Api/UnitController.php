@@ -10,10 +10,7 @@ class UnitController extends Controller
 {
     public function tree()
     {
-        $units = Unit::with('children')->whereNull('parent_id')->get();
-        // Since we want infinite depth, we should eager load deeply or just use a helper
-        // A simple approach for moderate depth:
-        $units = Unit::with('children.children.children')->whereNull('parent_id')->get();
+        $units = Unit::with('allChildren')->whereNull('parent_id')->get();
         
         return response()->json([
             'success' => true,

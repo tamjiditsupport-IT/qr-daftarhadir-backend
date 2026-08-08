@@ -10,15 +10,12 @@ use App\Models\MeetingParticipant;
 use App\Models\AttendanceLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\ScanAttendanceRequest;
 
 class AttendanceController extends Controller
 {
-    public function scan(Request $request)
+    public function scan(ScanAttendanceRequest $request)
     {
-        $request->validate([
-            'meeting_id' => 'required|exists:meetings,id',
-            'qr_code' => 'required|string',
-        ]);
 
         $meeting = Meeting::find($request->meeting_id);
         if ($meeting->status !== 'running') {

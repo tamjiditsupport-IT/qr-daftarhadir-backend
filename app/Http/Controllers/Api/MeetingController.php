@@ -8,29 +8,28 @@ use App\Models\Meeting;
 use App\Models\MeetingParticipant;
 use App\Models\Asatidz;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\StoreMeetingRequest;
 
 class MeetingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $meetings = Meeting::with(['type', 'creator'])->orderBy('created_at', 'desc')->get();
+        $query = Meeting::with(['type', 'creator'])->orderBy('created_at', 'desc');
+        
+        if ($request->query('all')) {
+            $meetings = $query->get();
+        } else {
+            $meetings = $query->paginate(20);
+        }
+        
         return response()->json([
             'success' => true,
             'data' => $meetings
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreMeetingRequest $request)
     {
-        $request->validate([
-            'title' => 'required|string',
-            'meeting_type_id' => 'required|exists:meeting_types,id',
-            'start_time' => 'required|date',
-            'late_minutes' => 'required|integer',
-            'unit_ids' => 'nullable|array',
-            'unit_ids.*' => 'exists:units,id'
-        ]);
-
         DB::beginTransaction();
         try {
             $meeting = Meeting::create([
@@ -91,7 +90,7 @@ class MeetingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal membuat rapat',
-                'error' => $e->getMessage()
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
     }

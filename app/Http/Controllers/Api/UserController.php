@@ -7,27 +7,21 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\StoreUserRequest;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'unit'])->orderBy('name')->get();
+        $users = User::with(['roles', 'unit'])->orderBy('name')->paginate(20);
         return response()->json([
             'success' => true,
             'data' => $users
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
-            'role' => 'required|string|exists:roles,name',
-            'unit_id' => 'nullable|exists:units,id'
-        ]);
 
         DB::beginTransaction();
         try {
@@ -56,7 +50,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menyimpan user',
-                'error' => $e->getMessage()
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
     }

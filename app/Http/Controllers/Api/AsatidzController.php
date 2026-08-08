@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Asatidz;
 use App\Models\QrCard;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
+use App\Http\Requests\StoreAsatidzRequest;
 use Illuminate\Support\Facades\DB;
 
 class AsatidzController extends Controller
@@ -22,24 +25,20 @@ class AsatidzController extends Controller
             });
         }
         
-        $asatidz = $query->get();
+        if ($request->query('all')) {
+            $asatidz = $query->get();
+        } else {
+            $asatidz = $query->paginate(20);
+        }
+        
         return response()->json([
             'success' => true,
             'data' => $asatidz
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAsatidzRequest $request)
     {
-        $request->validate([
-            'id_asatidz' => 'required|string|unique:asatidz,id_asatidz',
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string',
-            'unit_ids' => 'nullable|array',
-            'unit_ids.*' => 'exists:units,id',
-            'position_ids' => 'nullable|array',
-            'position_ids.*' => 'exists:positions,id',
-        ]);
 
         DB::beginTransaction();
         try {
@@ -79,7 +78,7 @@ class AsatidzController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan data asatidz',
-                'error' => $e->getMessage()
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
     }
@@ -195,7 +194,7 @@ class AsatidzController extends Controller
             return response()->json(['success' => true, 'message' => 'Data asatidz berhasil diimpor']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Gagal mengimpor data: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => app()->isLocal() ? 'Gagal mengimpor data: ' . $e->getMessage() : 'Gagal mengimpor data'], 500);
         }
     }
 

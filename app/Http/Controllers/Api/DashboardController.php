@@ -34,16 +34,21 @@ class DashboardController extends Controller
         $percentage = $totalExpected > 0 ? round(($totalAttended / $totalExpected) * 100, 1) : 0;
 
         // Chart data (last 7 meetings)
-        $chartMeetings = Meeting::orderBy('start_time', 'asc')->limit(7)->get();
+        $chartMeetings = Meeting::withCount([
+            'participants as present_count' => function ($query) {
+                $query->whereIn('attendance_status', ['Present', 'Late']);
+            },
+            'participants as absent_count' => function ($query) {
+                $query->whereIn('attendance_status', ['Absent', 'Sick', 'Permit']);
+            }
+        ])->orderBy('start_time', 'asc')->limit(7)->get();
+
         $chartData = [];
         foreach ($chartMeetings as $m) {
-            $present = \App\Models\MeetingParticipant::where('meeting_id', $m->id)->whereIn('attendance_status', ['Present', 'Late'])->count();
-            $absent = \App\Models\MeetingParticipant::where('meeting_id', $m->id)->whereIn('attendance_status', ['Absent', 'Sick', 'Permit'])->count();
-            
             $chartData[] = [
                 'name' => mb_substr($m->title, 0, 15) . (mb_strlen($m->title) > 15 ? '...' : ''),
-                'Hadir' => $present,
-                'Tidak Hadir' => $absent
+                'Hadir' => $m->present_count ?? 0,
+                'Tidak Hadir' => $m->absent_count ?? 0
             ];
         }
 

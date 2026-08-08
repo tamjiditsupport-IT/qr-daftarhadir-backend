@@ -8,6 +8,7 @@ use App\Models\Approval;
 use App\Models\AttendanceLog;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Requests\ResolveApprovalRequest;
 
 class ApprovalController extends Controller
 {
@@ -26,7 +27,7 @@ class ApprovalController extends Controller
         
         return response()->json([
             'success' => true,
-            'data' => $query->get()
+            'data' => $query->paginate(20)
         ]);
     }
 
@@ -55,13 +56,8 @@ class ApprovalController extends Controller
         ], 201);
     }
 
-    public function resolve(Request $request, $id)
+    public function resolve(ResolveApprovalRequest $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:Approved,Rejected',
-            'notes' => 'nullable|string',
-            'asatidz_id' => 'nullable|exists:asatidz,id'
-        ]);
 
         $approval = Approval::findOrFail($id);
 
@@ -152,7 +148,7 @@ class ApprovalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan',
-                'error' => $e->getMessage()
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
     }

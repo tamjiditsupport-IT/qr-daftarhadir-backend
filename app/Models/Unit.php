@@ -25,6 +25,11 @@ class Unit extends Model
         return $this->hasMany(Unit::class, 'parent_id');
     }
 
+    public function allChildren(): HasMany
+    {
+        return $this->children()->with('allChildren');
+    }
+
     /**
      * Recursively get this unit's ID and all its descendants' IDs.
      */
